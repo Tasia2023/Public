@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Лаборатория знаний — Викторина</title>
+<style>
+:root{--cyan:#69eaff;--violet:#a58bff;--glass:rgba(9,17,42,.72)}
+*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#050914;color:#fff;font-family:system-ui,-apple-system,Segoe UI,Arial,sans-serif}
+#stage{position:fixed;inset:0;isolation:isolate;background:radial-gradient(ellipse at 75% 45%,#24205a,#071326 65%,#030610)}
+video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+#videoWelcome{z-index:0}#reactionVideo{z-index:1;display:none;pointer-events:none}
+#shade{position:absolute;inset:0;z-index:2;pointer-events:none;background:linear-gradient(90deg,rgba(3,8,24,.58),transparent 65%),linear-gradient(0deg,rgba(3,8,24,.45),transparent 45%)}
+header{position:absolute;z-index:5;top:18px;left:22px;right:22px;display:flex;align-items:center;justify-content:space-between;gap:12px}
+.brand{font-weight:800;letter-spacing:.12em;text-transform:uppercase;font-size:clamp(14px,2vw,22px);text-shadow:0 0 18px #65dfff}
+.stars{display:flex;gap:5px;align-items:center}.star{font-size:clamp(18px,2.5vw,27px);color:#64708a;filter:drop-shadow(0 0 5px #000)}.star.on{color:#ffe66d;text-shadow:0 0 14px #ffe66d}
+button{font:inherit;cursor:pointer;color:#fff;border:1px solid rgba(125,225,255,.5);background:rgba(18,32,65,.72);border-radius:12px;padding:10px 14px;backdrop-filter:blur(12px);transition:transform .15s,border-color .15s,background .15s}
+button:hover:not(:disabled){transform:translateY(-1px);border-color:var(--cyan);background:rgba(29,54,95,.9)}
+button:disabled{cursor:default;opacity:.85}
+#restart{font-size:13px}
+#panel{position:absolute;z-index:4;left:clamp(12px,2.4vw,34px);bottom:clamp(12px,2.4vw,30px);width:clamp(300px,36vw,570px);max-height:78vh;overflow:auto;padding:clamp(16px,2vw,26px);border:1px solid rgba(111,225,255,.42);border-radius:22px;background:linear-gradient(135deg,rgba(9,19,46,.88),rgba(26,17,58,.72));box-shadow:0 15px 55px rgba(0,0,0,.35),inset 0 0 25px rgba(90,180,255,.08);backdrop-filter:blur(18px)}
+.eyebrow{color:var(--cyan);font-size:12px;font-weight:750;letter-spacing:.15em;text-transform:uppercase;margin-bottom:9px}
+h1{font-size:clamp(20px,2.5vw,30px);line-height:1.15;margin:0 0 17px}
+.answers{display:grid;gap:10px}.answer{display:flex;align-items:center;gap:12px;text-align:left;width:100%;padding:13px 15px;border-radius:14px;font-size:clamp(15px,1.5vw,18px);background:rgba(255,255,255,.07);border-color:rgba(161,193,255,.28)}
+.letter{display:grid;place-items:center;flex:0 0 30px;height:30px;border-radius:9px;background:rgba(106,226,255,.15);color:var(--cyan);font-weight:800}
+.answer.correct{background:rgba(21,158,89,.45);border-color:#43ff9b;box-shadow:0 0 18px rgba(67,255,155,.18)}
+.answer.wrong{background:rgba(196,35,64,.45);border-color:#ff657e;box-shadow:0 0 18px rgba(255,80,110,.18)}
+#feedback{min-height:25px;margin-top:13px;font-weight:700;color:#ff9aaa}
+#progress{margin-top:12px;color:#b8c8e8;font-size:12px}
+#finalScreen{position:absolute;z-index:8;inset:0;display:none;place-items:center;text-align:center;padding:20px;background:rgba(3,7,20,.74);backdrop-filter:blur(15px)}
+.final-card{max-width:650px;padding:clamp(24px,5vw,55px);border:1px solid rgba(115,230,255,.5);border-radius:28px;background:linear-gradient(140deg,rgba(17,34,72,.94),rgba(45,24,83,.92));box-shadow:0 0 70px rgba(88,175,255,.2)}
+.final-card h2{font-size:clamp(30px,6vw,58px);margin:0 0 12px;color:#ffe66d;text-shadow:0 0 20px #ffdc5c}.final-card p{font-size:clamp(17px,2.5vw,23px);line-height:1.5}
+#playAgain{margin-top:12px;padding:13px 24px;background:linear-gradient(100deg,#168edb,#7257db);border:0;font-weight:800}
+@media(max-width:650px){header{top:10px;left:10px;right:10px;flex-wrap:wrap}.brand{font-size:12px}#restart{padding:8px 10px}#panel{left:10px;bottom:10px;width:calc(100% - 20px);max-height:55vh;padding:15px;border-radius:18px}h1{font-size:20px;margin-bottom:12px}.answer{padding:10px 12px}.star{font-size:19px}#shade{background:linear-gradient(0deg,rgba(3,8,24,.6),transparent 70%)}}
+</style>
+</head>
+<body>
+<div id="stage">
+  <video id="videoWelcome" src="privet.mp4" autoplay muted loop playsinline></video>
+  <video id="reactionVideo" playsinline muted></video>
+  <audio id="backgroundMusic" src="music.mp3" loop preload="auto"></audio>
+  <div id="shade"></div>
+  <header>
+    <div class="brand">✦ Лаборатория знаний</div>
+    <div class="stars" id="stars" aria-label="Собранные звезды"></div>
+    <button id="musicToggle" type="button" aria-pressed="true">♫ Музыка: вкл.</button>
+    <button id="restart" type="button">↻ Начать заново</button>
+  </header>
+  <section id="panel" aria-live="polite">
+    <div class="eyebrow" id="questionNumber">Вопрос 1 из 10</div>
+    <h1 id="questionText"></h1>
+    <div class="answers" id="answers"></div>
+    <div id="feedback" role="status"></div>
+    <div id="progress">Выбери правильный ответ, чтобы получить звезду.</div>
+  </section>
+  <section id="finalScreen">
+    <div class="final-card">
+      <h2>ПОЗДРАВЛЯЕМ!</h2>
+      <p>Ты прошел все испытания и собрал десять звезд!</p>
+      <div class="stars" id="finalStars" style="justify-content:center;font-size:32px">★★★★★★★★★★</div>
+      <button id="playAgain" type="button">Играть снова</button>
+    </div>
+  </section>
+</div>
+<script>
+"use strict";
+const questions = [
+ {question:"Какое из этих чисел является непосредственным соседом числа 16?",answers:["13","18","17"],correctIndex:2},
+ {question:"Какое число идет непосредственно до числа 15?",answers:["12","14","19"],correctIndex:1},
+ {question:"Какое из этих чисел является непосредственным соседом числа 14?",answers:["10","16","15"],correctIndex:2},
+ {question:"Какое число стоит между числом 12 и числом 14?",answers:["8","13","15"],correctIndex:1},
+ {question:"Какое число стоит между числом 18 и числом 20?",answers:["15","17","19"],correctIndex:2},
+ {question:"Какое число идет непосредственно после числа 16?",answers:["15","18","17"],correctIndex:2},
+ {question:"Какое число стоит между числом 12 и числом 14?",answers:["15","13","11"],correctIndex:1},
+ {question:"Какое число идет после числа 18?",answers:["17","19","15"],correctIndex:1},
+ {question:"Какое число стоит непосредственно перед числом 16?",answers:["17","15","12"],correctIndex:1},
+ {question:"Какое из этих чисел является соседом числа 14?",answers:["16","12","15"],correctIndex:2}
+];
+const videoWelcome=document.getElementById("videoWelcome");
+const reactionVideo=document.getElementById("reactionVideo");
+const answersEl=document.getElementById("answers");
+const questionText=document.getElementById("questionText");
+const questionNumber=document.getElementById("questionNumber");
+const feedback=document.getElementById("feedback");
+const progress=document.getElementById("progress");
+const starsEl=document.getElementById("stars");
+const finalScreen=document.getElementById("finalScreen");
+let questionIndex=0, score=0, isLocked=false, runId=0, reactionFallback=null, reactionEndedHandler=null;
+
+// Music starts after the first real user interaction, as browsers block
+// audible autoplay until the visitor interacts with the page.
+const backgroundMusic=document.getElementById("backgroundMusic");
+const musicToggle=document.getElementById("musicToggle");
+let musicEnabled=true;
+backgroundMusic.volume=0.18;
+
+function startBackgroundMusic(){
+ if(!musicEnabled)return;
+ const p=backgroundMusic.play();
+ if(p && typeof p.catch==="function"){
+  p.catch(()=>{ musicToggle.textContent="♫ Нажми для музыки"; });
+ }
+}
+function toggleMusic(){
+ musicEnabled=!musicEnabled;
+ musicToggle.setAttribute("aria-pressed",String(musicEnabled));
+ musicToggle.textContent=musicEnabled?"♫ Музыка: вкл.":"♫ Музыка: выкл.";
+ if(musicEnabled)startBackgroundMusic();
+ else backgroundMusic.pause();
+}
+musicToggle.addEventListener("click",toggleMusic);
+// The first answer/restart tap is also a user gesture that can unlock audio.
+document.addEventListener("pointerdown",startBackgroundMusic,{once:true});
+document.addEventListener("keydown",startBackgroundMusic,{once:true});
+
+
+function renderStars(){
+ starsEl.innerHTML="";
+ for(let i=0;i<10;i++){
+  const s=document.createElement("span");s.className="star"+(i<score?" on":"");s.textContent="★";starsEl.appendChild(s);
+ }
+}
+function unlockInterface(){
+ isLocked=false;
+ answersEl.querySelectorAll("button").forEach(btn=>btn.disabled=false);
+}
+function clearReaction(){
+ if(reactionFallback!==null){clearTimeout(reactionFallback);reactionFallback=null;}
+ if(reactionEndedHandler){reactionVideo.removeEventListener("ended",reactionEndedHandler);reactionEndedHandler=null;}
+ reactionVideo.pause();reactionVideo.removeAttribute("src");reactionVideo.load();reactionVideo.style.display="none";
+ videoWelcome.style.display="block";
+}
+function showQuestion(){
+ if(questionIndex>=questions.length){showFinal();return;}
+ const q=questions[questionIndex];
+ questionNumber.textContent=`Вопрос ${questionIndex+1} из ${questions.length}`;
+ questionText.textContent=q.question;
+ feedback.textContent="";
+ progress.textContent="Выбери правильный ответ, чтобы получить звезду.";
+ answersEl.innerHTML="";
+ q.answers.forEach((answer,i)=>{
+  const btn=document.createElement("button");btn.type="button";btn.className="answer";
+  const letter=document.createElement("span");letter.className="letter";letter.textContent=String.fromCharCode(65+i);
+  const text=document.createElement("span");text.textContent=answer;
+  btn.append(letter,text);
+  // The handler is attached every time buttons are rendered.
+  btn.addEventListener("click",()=>checkAnswer(i,btn));
+  answersEl.appendChild(btn);
+ });
+ renderStars();
+ unlockInterface(); // Critical: every new question starts unlocked.
+}
+function playReaction(file, thisRun, onComplete, keepReactionFrame=false){
+ isLocked=true;
+ answersEl.querySelectorAll("button").forEach(btn=>btn.disabled=true);
+ videoWelcome.pause();
+ videoWelcome.style.display="none";
+ reactionVideo.style.display="block";
+ reactionVideo.src=file;
+ reactionVideo.currentTime=0;
+ let completed=false;
+ const finish=()=>{
+  if(completed)return;completed=true;
+  if(thisRun!==runId)return;
+  if(reactionFallback!==null){clearTimeout(reactionFallback);reactionFallback=null;}
+  if(reactionEndedHandler){reactionVideo.removeEventListener("ended",reactionEndedHandler);reactionEndedHandler=null;}
+  reactionVideo.pause();
+  if(!keepReactionFrame){
+   reactionVideo.style.display="none";videoWelcome.style.display="block";
+   videoWelcome.currentTime=0;
+   const welcomePlay=videoWelcome.play();if(welcomePlay&&welcomePlay.catch)welcomePlay.catch(()=>{});
+  }
+  onComplete();
+ };
+ reactionEndedHandler=finish;
+ reactionVideo.addEventListener("ended",finish,{once:true});
+ // Fallback only protects against a missing/failed ended event; normal completion uses ended.
+ reactionFallback=setTimeout(finish,12000);
+ const p=reactionVideo.play();
+ if(p&&typeof p.catch==="function")p.catch(finish);
+}
+function checkAnswer(selectedIndex,button){
+ if(isLocked)return;
+ if(reactionVideo.style.display==="block" && reactionVideo.ended){reactionVideo.style.display="none";videoWelcome.style.display="block";}
+ const thisRun=runId;
+ const q=questions[questionIndex];
+ if(!q || selectedIndex<0 || selectedIndex>=q.answers.length)return;
+ isLocked=true;
+ answersEl.querySelectorAll("button").forEach(btn=>btn.disabled=true);
+ if(selectedIndex===q.correctIndex){
+  button.classList.add("correct");
+  score=Math.min(10,score+1);
+  renderStars();
+  feedback.style.color="#8dffbf";
+  feedback.textContent="Правильно! Звезда твоя!";
+  playReaction("ura.mp4",thisRun,()=>{
+   if(thisRun!==runId)return;
+   questionIndex++;
+   if(questionIndex===questions.length)showFinal();
+   else showQuestion(); // showQuestion invokes unlockInterface.
+  });
+ }else{
+  button.classList.add("wrong");
+  feedback.style.color="#ff9aaa";
+  feedback.textContent="Упс! Попробуй еще раз!";
+  playReaction("oops.mp4",thisRun,()=>{
+   if(thisRun!==runId)return;
+   // Wrong answer: stay on the same question and leave the character visibly disappointed.
+   // The ended oops frame remains on screen until the next answer attempt or restart.
+   feedback.textContent="Попробуй выбрать другой ответ.";
+   unlockInterface();
+  },true);
+ }
+}
+function showFinal(){
+ isLocked=true;
+ answersEl.innerHTML="";feedback.textContent="";progress.textContent="";
+ finalScreen.style.display="grid";
+ renderStars();
+}
+function restartGame(){
+ runId++; // Invalidates old events and callbacks.
+ clearReaction();
+ questionIndex=0;score=0;isLocked=false;
+ finalScreen.style.display="none";
+ feedback.textContent="";feedback.style.color="#ff9aaa";
+ renderStars();showQuestion();
+ const p=videoWelcome.play();if(p&&p.catch)p.catch(()=>{});
+}
+document.getElementById("restart").addEventListener("click",()=>{startBackgroundMusic();restartGame();});
+document.getElementById("playAgain").addEventListener("click",()=>{startBackgroundMusic();restartGame();});
+videoWelcome.play().catch(()=>{});
+showQuestion();
+</script>
+</body>
+</html>
